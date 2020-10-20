@@ -1,0 +1,201 @@
+---
+title: "Peer-Graded-PML"
+author: "Samriddhi"
+date: "10/20/2020"
+output: html_document
+---
+
+
+Introduction
+
+People love numbers. They want a to measure everything and store that data to compare it for future purposes.They like to do so with their health (or bodies) too. Using devices such as Jawbone Up, Nike FuelBand, and Fitbit are now a trend which is
+followed by everyone around the world. These devices allow us to measure and collect large data-sets containing information about personal activities and health for example, heart rate, pulse, steps walked,etc , to find a pattern and prevent any future health problems.
+
+
+
+```{r}
+
+
+
+
+library(data.table)
+
+library(rpart)
+
+library(corrplot)
+
+library(gbm)
+
+library(ggplot2)
+
+library(knitr)
+
+library (caret)
+
+library (rpart.plot)
+
+
+```
+
+
+A raw data has no meaning. It needs to be cleaned or else it's useless.
+So, the data will now be cleaned, followed by exploring of the data.
+
+
+
+```{r}
+
+
+Url_testing <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+Url_trading  <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+
+data_testing <- read.csv(url(Url_testing))
+data_trading <- read.csv(url(Url_trading))
+
+
+
+```
+
+This is followed by Cleaning of the data.
+
+
+
+```{r}
+
+
+data_training <- data_trading[, colSums(is.na(data_trading)) == 0]
+data_testing_2 <- data_testing[, colSums(is.na(data_testing)) == 0]
+
+```
+
+
+After the cleaning and exploring of data, it can now be used to make predictions.
+Some percentage of data is used for training while the rest is used in testing process.
+70% of the database will be used in training while the rest 30 percent of the database will be used in testing procedure.
+The thirty prcent data used in testing will later be used for making future predictions.
+
+
+```{r}
+
+data_training <- data_training[, -c(1:7)]
+data_testing_2 <- data_testing_2[, -c(1:7)]
+dim(data_training)
+
+
+```
+
+
+Testing and training data is split into groups .
+WE are cross-validating the samples.
+
+```{r}
+
+
+set.seed(1234)
+datatraining2 <- createDataPartition(data_trading$classe, p = 0.7, list = FALSE)
+data_training <- data_training[datatraining2, ]
+data_testing_2 <- data_training[-datatraining2, ]
+dim(data_training)
+dim(data_testing_2)
+
+
+
+```
+
+
+We are now going to diagnose the prediction for a unique/single/different value; the non zero values.
+Also while setting the dimensions.
+
+
+```{r}
+
+non_Zero <- nearZeroVar(data_training)
+data_training <- data_training[, -non_Zero]
+data_testing_2 <- data_testing_2[, -non_Zero]
+dim(data_training)
+dim(data_testing_2)
+
+
+```
+
+
+Now we will the the coorelated variances. And then plot the correlation on a chart.
+
+
+```{r}
+
+
+plot_cor_sd <- cor(data_training[, -53])
+corrplot(plot_cor_sd, order = "FPC", method = "color", type = "upper", tl.cex = 0.8, tl.col = rgb(0, 0, 0))
+
+
+
+```
+
+
+The dark-coloured intersection marked the correlation and prediction in the chart.
+Ahead of this, we can see the model building using 2 different algorithms ; namely trees and random forests.
+
+
+
+```{r}
+
+
+
+set.seed(20000)
+tre_dec_sd <- rpart(classe ~ ., data=data_training, method = "class")
+rpart.plot(tre_dec_sd)
+
+
+
+```
+
+
+Validating the database.
+
+
+```{r}
+
+
+model_pre_sd <- predict(tre_dec_sd, data_testing_2, type = "class")
+ab <- confusionMatrix(model_pre_sd, data_testing_2$classe)
+ab
+
+
+```
+
+
+Plotting the Model Chart.
+
+
+```{r}
+
+
+plot(model_pre_sd)
+
+
+```
+
+
+All the models are being applied one after the other: General Booster Model followed by the GBM Model.
+
+
+```{r}
+
+
+set.seed(10000)
+ctr_gbm_sd <- trainControl(method = "repeatedcv", number = 5, repeats = 1)
+valid_gbm_sd <- train(classe ~ .,data=data_training, method = "gbm", trControl = ctr_gbm_sd, verbose = FALSE)
+valid_gbm_sd$finalModel
+
+
+```
+
+
+
+
+Due to some technical issues, I couldn't attach the output file. So instead of that I've attached the Rmd file and the pdf file. Hope you'll consider. 
+
+It was a very informative project. I learned a lot along this journey. And all the credit goes to the wonderful team who put up such a great course.
+Thanking the team behind this course and the Uni.
+
